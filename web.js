@@ -1,8 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const base64 = require("base-64");
 const fs = require("fs");
+var https = require("https");
+const image2base64 = require("image-to-base64");
 const axios = require("axios");
+
+function saveImageToDisk(url, id) {
+  var file = fs.createWriteStream("./downloads/img" + id + ".jpg");
+  var request = https.get(url, function(response) {
+    response.pipe(file);
+  });
+}
 
 router.get("/api/user/:userId", (req, res) => {
   let data;
@@ -19,23 +27,23 @@ router.get("/api/user/:userId", (req, res) => {
     });
 });
 router.get("/api/user/:userId/avatar", (req, res) => {
-  console.log(req.file);
-  let avatar;
   let id = req.params.userId;
-  let fileInfo = [];
   axios
     .get(`https://reqres.in/api/users/${id}`)
     .then(item => {
-      for (let i = 0; i < item.data.data; i++) {
-        fileInfo.push({
-          originalName: req.files[i].originalName,
-          size: req.files[i].size,
-          base64: new Buffer(fs.readFileSync(req.files[i].path)).toString("base64")
+      imgUrl = item.data.data.avatar;
+      saveImageToDisk(imgUrl, id);
+      return imgUrl;
+    })
+    .then(url => {
+      image2base64(url)
+        .then(response => {
+          console.log(response);
+          res.send({ response });
+        })
+        .catch(error => {
+          console.log(error);
         });
-        fs.saveFile(req.files[i].path);
-      }
-      avatar = item.data.data.avatar;
-      res.send({ avatar });
     })
     .catch(err => {
       console.error(err);
