@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const base64 = require("base-64");
 const fs = require("fs");
 const axios = require("axios");
 
@@ -17,7 +18,7 @@ router.get("/api/user/:userId", (req, res) => {
       return err;
     });
 });
-router.post("/api/user/:userId/avatar", (req, res) => {
+router.get("/api/user/:userId/avatar", (req, res) => {
   console.log(req.file);
   let avatar;
   let id = req.params.userId;
@@ -29,9 +30,9 @@ router.post("/api/user/:userId/avatar", (req, res) => {
         fileInfo.push({
           originalName: req.files[i].originalName,
           size: req.files[i].size,
-          b64: new Buffer(fs.readFileSync(req.files[i].path)).toString("base64")
+          base64: new Buffer(fs.readFileSync(req.files[i].path)).toString("base64")
         });
-        fs.unlink(req.files[i].path);
+        fs.saveFile(req.files[i].path);
       }
       avatar = item.data.data.avatar;
       res.send({ avatar });
